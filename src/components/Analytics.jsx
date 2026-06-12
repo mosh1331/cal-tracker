@@ -13,7 +13,7 @@ export default function Analytics() {
   Object.keys(logs).forEach(date => {
     const dailyLogs = logs[date] || [];
     const consumed = dailyLogs.reduce((sum, item) => sum + (item.calories || 0), 0);
-    const deficit = targetCalories - consumed;
+    const deficit = bmrBaseline - consumed;
     
     // Only accumulate positive deficits (days you ate under your target)
     if (deficit > 0) {
