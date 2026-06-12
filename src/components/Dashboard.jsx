@@ -26,7 +26,7 @@ export default function Dashboard({ selectedDate }) {
       <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
         <div className="space-y-1">
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Energy Balance</span>
-          <h2 className="text-3xl font-black text-gray-900">{consumedCalories} <span className="text-sm font-normal text-gray-400">/ {targetCalories} kcal</span></h2>
+          <h2 className="text-3xl font-black text-black" style={{color:'red'}}>{consumedCalories} <span className="text-sm font-normal text-gray-400">/ {targetCalories} kcal</span></h2>
           <p className={`text-xs font-medium ${remainingCalories >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             {remainingCalories >= 0 ? `${remainingCalories} kcal left under limit` : `${Math.abs(remainingCalories)} kcal limit deficit crossed`}
           </p>
