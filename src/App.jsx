@@ -25,10 +25,10 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 text-gray-800 pb-24">
+    <div className="min-h-screen bg-black-50/50 text-gray-800 pb-24">
       {/* App Header Bar */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-base font-black tracking-tight text-gray-900 uppercase">CalTracker PWA</h1>
+      <header className="bg-gray-800 border-b border-gray-600 sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
+        <h1 className="text-base font-black tracking-tight text-gray-900 uppercase">CalTracker</h1>
         <input 
           type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
           className="bg-gray-100 p-1.5 rounded-lg text-xs font-bold focus:outline-none text-gray-700"
