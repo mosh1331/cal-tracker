@@ -37,13 +37,24 @@ export default function Analytics() {
     };
 
     const internalDays = getLast7Days();
+    const progressPercent = Math.min((totalDeficit / 7700) * 100, 100);
 
-    console.log(logs,'logs')
+
+    console.log(logs, 'logs')
 
     return (
         <div className="space-y-4 max-w-md mx-auto">
             {/* Fat Loss Hero Panel */}
             <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-sm text-center">
+                <div className="flex w-full justify-center items-center">
+                    <div className="relative w-16 h-16 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path className="text-gray-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path className="text-indigo-600 transition-all duration-500 ease-out" strokeDasharray={`${progressPercent}, 100`} strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <span className="absolute text-[11px] font-bold text-gray-100">{Math.round(progressPercent)}%</span>
+                </div>
+                </div>
                 <span className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest block mb-1">
                     Cals need to burn 1kg FAT
                 </span>
@@ -51,10 +62,12 @@ export default function Analytics() {
                     {/* {totalFatLoss} <span className="text-xl font-medium text-indigo-300">kg</span> */}
                     {totalDeficit} / 7700 kcal
                 </h2>
-                <p className="text-xs text-indigo-200 mt-2 max-w-xs mx-auto">
+                {/* <p className="text-xs text-indigo-200 mt-2 max-w-xs mx-auto">
                     Estimated systemic lipid tissue burned based on your historical tracking data.
-                </p>
+                </p> */}
+
             </div>
+
 
             {/* Baseline & Deficit Metric Cards */}
             <div className="grid grid-cols-2 gap-3">
@@ -89,7 +102,7 @@ export default function Analytics() {
                 <div className="space-y-2.5">
                     {internalDays.map(date => {
                         const dayLogs = logs[date] || [];
-                        console.log(dayLogs[0],'daylogs')
+                        console.log(dayLogs[0], 'daylogs')
                         const consumed = dayLogs.reduce((sum, item) => sum + item.calories, 0);
                         const percent = Math.min((consumed / targetCalories) * 100, 100);
 
