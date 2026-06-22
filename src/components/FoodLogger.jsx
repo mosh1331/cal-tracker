@@ -12,6 +12,17 @@ export default function FoodLogger({ selectedDate }) {
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
 
+    // --- New States for the Adjustment Popup Modal ---
+    const [showModal, setShowModal] = useState(false);
+    const [modalWeight, setModalWeight] = useState('');
+    const [baseNutrition, setBaseNutrition] = useState({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        weight: 0
+    });
+
     const filteredDictionary = dictionary.filter(item =>
         item.name.toLowerCase().includes(name.toLowerCase())
     );
@@ -29,7 +40,6 @@ export default function FoodLogger({ selectedDate }) {
         if (!name) return alert('Enter a food item description first.');
         setIsAiLoading(true);
 
-        // Read the Calorie Ninja environment variable
         const apiKey = import.meta.env.VITE_CALORIE_NINJA_API_KEY;
 
         if (!apiKey) {
@@ -39,7 +49,6 @@ export default function FoodLogger({ selectedDate }) {
         }
 
         try {
-            // Calorie Ninjas uses a GET request with an encoded query parameter
             const response = await fetch(`https://api.calorieninjas.com/v1/nutrition?query=${encodeURIComponent(name)}`, {
                 method: 'GET',
                 headers: {
@@ -53,28 +62,28 @@ export default function FoodLogger({ selectedDate }) {
             }
 
             const data = await response.json();
+            console.log('Calorie Ninja API response:', data);
 
-            // Check if the natural language processing identified any items
             if (!data.items || data.items.length === 0) {
                 alert('Could not resolve nutritional data for that description. Try specifying quantities (e.g., "100g rice").');
                 setIsAiLoading(false);
                 return;
             }
 
-            // Accumulate metrics across all ingredients parsed in the text query
+            // Accumulate baseline metrics AND baseline weights from the API response
             const calculatedNutrition = data.items.reduce((totals, item) => {
                 totals.calories += item.calories || 0;
                 totals.protein += item.protein_g || 0;
                 totals.carbs += item.carbohydrates_total_g || 0;
                 totals.fat += item.fat_total_g || 0;
+                totals.weight += item.serving_size_g || 0; 
                 return totals;
-            }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+            }, { calories: 0, protein: 0, carbs: 0, fat: 0, weight: 0 });
 
-            // Set layout values cleanly, rounding macros to one decimal place
-            setCalories(Math.round(calculatedNutrition.calories));
-            setProtein(parseFloat(calculatedNutrition.protein.toFixed(1)));
-            setCarbs(parseFloat(calculatedNutrition.carbs.toFixed(1)));
-            setFat(parseFloat(calculatedNutrition.fat.toFixed(1)));
+            // Store baseline calculations and open adjustment modal
+            setBaseNutrition(calculatedNutrition);
+            setModalWeight(Math.round(calculatedNutrition.weight).toString());
+            setShowModal(true);
 
         } catch (error) {
             console.error('Calorie Ninja API integration error:', error);
@@ -82,6 +91,23 @@ export default function FoodLogger({ selectedDate }) {
         } finally {
             setIsAiLoading(false);
         }
+    };
+
+    // Calculate dynamic values for modal preview on-the-fly
+    const targetWeight = parseFloat(modalWeight) || 0;
+    const scaleFactor = baseNutrition.weight > 0 ? targetWeight / baseNutrition.weight : 0;
+
+    const liveCalories = Math.round(baseNutrition.calories * scaleFactor);
+    const liveProtein = parseFloat((baseNutrition.protein * scaleFactor).toFixed(1));
+    const liveCarbs = parseFloat((baseNutrition.carbs * scaleFactor).toFixed(1));
+    const liveFat = parseFloat((baseNutrition.fat * scaleFactor).toFixed(1));
+
+    const handleAcceptAiData = () => {
+        setCalories(liveCalories.toString());
+        setProtein(liveProtein.toString());
+        setCarbs(liveCarbs.toString());
+        setFat(liveFat.toString());
+        setShowModal(false);
     };
 
     const handleSave = (e) => {
@@ -104,7 +130,7 @@ export default function FoodLogger({ selectedDate }) {
     };
 
     return (
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 max-w-md mx-auto">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 max-w-md mx-auto relative">
             <h3 className="text-lg font-bold text-gray-800 mb-3">Track Meal</h3>
             <form onSubmit={handleSave} className="space-y-3">
                 <div className="relative">
@@ -175,6 +201,68 @@ export default function FoodLogger({ selectedDate }) {
                     Log Entry
                 </button>
             </form>
+
+            {/* --- Portion Adjustment Popup Modal --- */}
+            {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl border border-gray-100 transform transition-all scale-100">
+                        <div className="mb-4">
+                            <h4 className="text-base font-bold text-gray-800">Adjust Consumed Amount</h4>
+                            <p className="text-xs text-gray-400 mt-0.5">Scale macros based on actual weight consumed.</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Grams Eaten (g)</label>
+                                <input
+                                    type="number"
+                                    value={modalWeight}
+                                    onChange={(e) => setModalWeight(e.target.value)}
+                                    placeholder="e.g., 150"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white"
+                                />
+                            </div>
+
+                            {/* Live Recalculation Metrics Box */}
+                            <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100/60 grid grid-cols-4 gap-2 text-center">
+                                <div>
+                                    <span className="block text-[10px] font-bold text-indigo-400 uppercase">Kcal</span>
+                                    <span className="text-sm font-bold text-indigo-900">{liveCalories}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-[10px] font-bold text-indigo-400 uppercase">Prot</span>
+                                    <span className="text-sm font-bold text-indigo-900">{liveProtein}g</span>
+                                </div>
+                                <div>
+                                    <span className="block text-[10px] font-bold text-indigo-400 uppercase">Carb</span>
+                                    <span className="text-sm font-bold text-indigo-900">{liveCarbs}g</span>
+                                </div>
+                                <div>
+                                    <span className="block text-[10px] font-bold text-indigo-400 uppercase">Fat</span>
+                                    <span className="text-sm font-bold text-indigo-900">{liveFat}g</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-5 flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowModal(false)}
+                                className="flex-1 py-2.5 text-xs font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleAcceptAiData}
+                                className="flex-1 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-sm"
+                            >
+                                Apply Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
